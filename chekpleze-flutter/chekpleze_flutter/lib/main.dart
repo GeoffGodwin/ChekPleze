@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import 'package:redux/redux.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:chekpleze_flutter/app_state.dart';
+import 'package:chekpleze_flutter/screens/guest_screen.dart';
+import 'package:chekpleze_flutter/screens/welcome_screen.dart';
 
 void main() {
   runApp(ChekPleze());
@@ -13,18 +17,26 @@ class ChekPleze extends StatelessWidget {
 
   ChekPleze({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Set landscape orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
     return StoreProvider<AppState>(
       store: store,
       child: MaterialApp(
         title: 'ChekPleze',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
           useMaterial3: true,
         ),
-        home: const TitleScreen(title: 'ChekPleze'),
+        routes: {
+        '/': (context) => const WelcomeScreen(),
+        '/guest-screen': (context) => const GuestScreen(),
+      }
       ),
     );
   }
