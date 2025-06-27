@@ -16,13 +16,15 @@ class _GuestScreenState extends State<GuestScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            AddGuest(),
-            const GuestList()
-          ],
+      body: SafeArea(
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              AddGuest(),
+              const GuestList()
+            ],
+          )
         )
       ),
       floatingActionButton: defaultTargetPlatform == TargetPlatform.iOS ?
@@ -46,8 +48,8 @@ class GuestList extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreProvider.of<AppState>(context);
 
-    void showEnterItemScreen() {
-      Navigator.of(context).pushNamed('/enter-item-screen');
+    void showBillDetailsScreen() {
+      Navigator.of(context).pushNamed('/bill-details-screen');
     }
 
     return Expanded(
@@ -95,7 +97,7 @@ class GuestList extends StatelessWidget {
               ),
               const SizedBox(height: 20.0,),
               ElevatedButton(
-                onPressed: state.getGuests.length > 1 ? showEnterItemScreen : null,
+                onPressed: state.getGuests.length > 1 ? showBillDetailsScreen : null,
                 child: const Text('Next'),
               ),
             ],
