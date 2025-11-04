@@ -16,20 +16,20 @@ class _GuestScreenState extends State<GuestScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      body: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            AddGuest(),
-            const GuestList()
-          ],
-        )
+      body: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              AddGuest(),
+              const GuestList()
+            ],
+          )
       ),
       floatingActionButton: defaultTargetPlatform == TargetPlatform.iOS ?
         BackButton(
           style: ButtonStyle(
-            padding: MaterialStateProperty.all<EdgeInsets>(const EdgeInsets.fromLTRB(0, 30, 20, 0)),
-            iconSize: MaterialStateProperty.all(30.0)
+            padding: WidgetStateProperty.all<EdgeInsets>(const EdgeInsets.fromLTRB(0, 30, 20, 0)),
+            iconSize: WidgetStateProperty.all(30.0)
           )
         ) : Container(),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
@@ -46,8 +46,8 @@ class GuestList extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreProvider.of<AppState>(context);
 
-    void showEnterItemScreen() {
-      Navigator.of(context).pushNamed('/enter-item-screen');
+    void showBillDetailsScreen() {
+      Navigator.of(context).pushNamed('/bill-details-screen');
     }
 
     return Expanded(
@@ -57,17 +57,17 @@ class GuestList extends StatelessWidget {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 20,
             children: [
               const Align(
                 alignment: Alignment.topLeft,
-                child: Text('Guest List')
+                child: Text('Guest List', style: TextStyle(fontSize: 20.0))
               ),
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black)
                 ),
                 height: 250,
-                width: 300,
                 child: ListView(
                   children: [
                     ...state.getGuests
@@ -89,13 +89,12 @@ class GuestList extends StatelessWidget {
                                     icon: const Icon(Icons.close))
                                 : null,
                           ))
-                      .toList(),
+                      ,
                   ],
                 )
               ),
-              const SizedBox(height: 20.0,),
               ElevatedButton(
-                onPressed: state.getGuests.length > 1 ? showEnterItemScreen : null,
+                onPressed: state.getGuests.length > 1 ? showBillDetailsScreen : null,
                 child: const Text('Next'),
               ),
             ],
@@ -115,7 +114,6 @@ class AddGuest extends StatelessWidget {
 
   final guestName = TextEditingController();
 
-  @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
     guestName.dispose();
@@ -126,27 +124,27 @@ class AddGuest extends StatelessWidget {
     final store = StoreProvider.of<AppState>(context);
 
     return Expanded(
+      flex: 2,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: 10,
         children: <Widget>[
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 30.0),
-              child: TextField(
-                controller: guestName,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  fillColor: Colors.white,
-                  hintText: 'Add Guest Name',
-                ),
+          SizedBox(
+            width: 250.0,
+            child: TextField(
+              controller: guestName,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                fillColor: Colors.white,
+                hintText: 'Add Guest Name',
               ),
             ),
           ),
-          const SizedBox(width: 10.0,),
           SizedBox(
             width: 150.0,
             child: Padding(
-              padding: const EdgeInsets.only(top: 10.0),
+              padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: guestName,
                 builder: (context, value, child) {

@@ -1,5 +1,4 @@
 import 'package:redux/redux.dart';
-import 'dart:developer';
 
 class AppState {
   final List<String> _guests;
@@ -45,9 +44,9 @@ int getCounterReducer(int counter, dynamic action) {
 }
 
 Reducer<List<String>> allReducers = combineReducers<List<String>>([
-  TypedReducer<List<String>, GetGuestAction>(getGuestsReducer),
-  TypedReducer<List<String>, AddGuestAction>(addGuestReducer),
-  TypedReducer<List<String>, RemoveGuestAction>(removeGuestReducer),
+  TypedReducer<List<String>, GetGuestAction>(getGuestsReducer).call,
+  TypedReducer<List<String>, AddGuestAction>(addGuestReducer).call,
+  TypedReducer<List<String>, RemoveGuestAction>(removeGuestReducer).call,
 ]);
 
 AppState appStateReducer(AppState state, dynamic action) {
