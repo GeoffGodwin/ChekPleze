@@ -28,6 +28,10 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
     super.dispose();
   }
 
+  void showTableScreen() {
+      Navigator.of(context).pushNamed('/table-screen');
+    }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,7 +156,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                   ),
                   )
                 ),
-                const ElevatedButton(onPressed: null, child: Text('Next'))
+                ElevatedButton(onPressed: showTableScreen, child: Text('Next'))
               ],
             )
           ],
