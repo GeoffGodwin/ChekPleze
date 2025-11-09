@@ -106,7 +106,7 @@ class DiamondTile extends StatelessWidget {
             ),
             child: Padding(
               padding: contentPadding,
-              child: Center(child: _coerceChild(child)),
+              child: Center(child: _coerceChild(context, child)),
             ),
           ),
         ),
@@ -118,12 +118,14 @@ class DiamondTile extends StatelessWidget {
   /// - Single word: maxLines = 1
   /// - Contains a space: maxLines = 2
   /// Other widgets are wrapped with FittedBox(scaleDown) to avoid overflow.
-  Widget _coerceChild(Widget child) {
+  Widget _coerceChild(BuildContext context, Widget child) {
     if (child is Text) {
       // Try to detect simple single-word vs spaced text.
       final data = child.data;
       final hasSpace = data?.contains(' ') ?? false;
       final maxLines = hasSpace ? 2 : 1;
+      // Resolve a non-deprecated text scaler: prefer child's own, else inherit from MediaQuery.
+      final inheritedScaler = MediaQuery.maybeOf(context)?.textScaler;
       return Text(
         data ?? '',
         key: child.key,
@@ -134,9 +136,8 @@ class DiamondTile extends StatelessWidget {
         locale: child.locale,
         softWrap: true,
         overflow: TextOverflow.ellipsis,
-        // Prefer textScaler (textScaleFactor is deprecated in newer Flutter)
-        textScaler: child.textScaler ??
-            (child.textScaleFactor != null ? TextScaler.linear(child.textScaleFactor!) : null),
+        // Use non-deprecated textScaler; do not reference textScaleFactor.
+        textScaler: child.textScaler ?? inheritedScaler,
         maxLines: maxLines,
         semanticsLabel: child.semanticsLabel,
         textWidthBasis: child.textWidthBasis ?? TextWidthBasis.parent,

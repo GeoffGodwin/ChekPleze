@@ -25,6 +25,11 @@ class DiamondTwoRowLattice extends StatelessWidget {
     this.stagger = true,
     this.itemBuilder,
     this.onTapIndex,
+    this.debug = false,
+    this.debugTileBounds = false,
+    this.debugOuterBorderColor = const Color(0xFF00C853),
+    this.debugTileBorderColor = const Color(0xFF2962FF),
+    this.debugBackground,
   });
 
   final int count;
@@ -36,28 +41,79 @@ class DiamondTwoRowLattice extends StatelessWidget {
   final bool stagger;
   final IndexedWidgetBuilder? itemBuilder;
   final ValueChanged<int>? onTapIndex;
+  // Debugging helpers
+  final bool debug;
+  final bool debugTileBounds;
+  final Color debugOuterBorderColor;
+  final Color debugTileBorderColor;
+  final Color? debugBackground;
 
   @override
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox();
-    final columns = (count / 2).ceil();
+  // columns previously used for rough sizing; bounding box now computed precisely.
 
-    final widgets = <Widget>[];
+    // First pass: compute placements to calculate exact bounding box (avoids extra side padding).
+    final placements = <Map<String, dynamic>>[];
+    // Centering correction base offset: balances visual left bias in staggered layout.
+    final baseOffsetX = stagger ? diamondSize / 4 : 0.0;
+    final verticalFactor = stagger ? 0.5 : 0.6; // tweak for visual balance
+
     for (int i = 0; i < count; i++) {
-      final currentIndex = i;
       final col = i ~/ 2; // floor(i/2)
       final isTopRow = i % 2 == 0;
       final row = isTopRow ? 0 : 1;
-
-      // Vertical positioning: row0 at y=0, row1 at y=diamondSize * verticalFactor
-      final verticalFactor = stagger ? 0.5 : 0.6; // tweak for visual balance
       final dy = row * diamondSize * verticalFactor;
+      double dx = baseOffsetX + col * diamondSize;
+      if (stagger && row == 1) dx += diamondSize / 2;
+      placements.add({'i': i, 'dx': dx, 'dy': dy});
+    }
 
-      // Horizontal base position
-      double dx = col * diamondSize;
-      // Apply stagger horizontal offset to bottom row for lattice look.
-      if (stagger && row == 1) {
-        dx += diamondSize / 2;
+    double minLeft = double.infinity;
+    double maxRight = -double.infinity;
+    double minTop = double.infinity;
+    double maxBottom = -double.infinity;
+    for (final p in placements) {
+      final dx = p['dx'] as double;
+      final dy = p['dy'] as double;
+      // dx/dy represent the top-left of the padded tile container (before Padding applies inside),
+      // so the full padded bounds are exactly [dx .. dx + diamondSize + spacing].
+      final left = dx;
+      final right = dx + diamondSize + spacing;
+      final top = dy;
+      final bottom = dy + diamondSize + spacing;
+      if (left < minLeft) minLeft = left;
+      if (right > maxRight) maxRight = right;
+      if (top < minTop) minTop = top;
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    if (minLeft == double.infinity) minLeft = 0;
+    if (minTop == double.infinity) minTop = 0;
+
+    final width = (maxRight - minLeft).clamp(0.0, double.infinity);
+    final height = (maxBottom - minTop).clamp(0.0, double.infinity);
+
+    // Second pass: build widgets with a normalization shift so leftmost aligns to x=0.
+  final widgets = <Widget>[];
+  final underlays = <Widget>[]; // debug underlays per tile
+    for (final p in placements) {
+      final i = p['i'] as int;
+      final dx = (p['dx'] as double) - minLeft;
+      final dy = (p['dy'] as double) - minTop;
+      if (debug && debugTileBounds) {
+        underlays.add(
+          Transform.translate(
+            offset: Offset(dx - minLeft, dy - minTop),
+            child: Container(
+              width: diamondSize + spacing,
+              height: diamondSize + spacing,
+              decoration: BoxDecoration(
+                border: Border.all(color: debugTileBorderColor, width: 1),
+                color: debugBackground?.withOpacity(0.05),
+              ),
+            ),
+          ),
+        );
       }
 
       widgets.add(
@@ -70,23 +126,36 @@ class DiamondTwoRowLattice extends StatelessWidget {
               borderColor: borderColor,
               borderWidth: borderWidth,
               fillColor: fillColor,
-              onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
-              child: _buildChild(context, currentIndex),
+              onTap: onTapIndex == null ? null : () => onTapIndex!(i),
+              child: _buildChild(context, i),
+            ),
+          ),
+        ),
+      );
+    }
+    final stackChildren = <Widget>[...underlays, ...widgets];
+    if (debug) {
+      // Outer bounding box overlay
+      stackChildren.add(
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: true,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: debugOuterBorderColor, width: 1.5),
+                color: debugBackground?.withOpacity(0.04),
+              ),
             ),
           ),
         ),
       );
     }
 
-    // Calculate overall width/height needed for the stack.
-    final width = columns * diamondSize + (stagger ? diamondSize / 2 : 0) + spacing;
-    final height = diamondSize + // top row height
-        (count > 1 ? diamondSize * (stagger ? 0.5 : 0.6) : 0) + spacing; // extra for second row
-
-    return SizedBox(
+    return Container(
       width: width,
       height: height,
-      child: Stack(children: widgets),
+      color: debug && debugBackground != null ? debugBackground!.withOpacity(0.02) : null,
+      child: Stack(children: stackChildren),
     );
   }
 

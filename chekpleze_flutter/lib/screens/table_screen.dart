@@ -31,6 +31,11 @@ class TableScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               onTapIndex: (i) => debugPrint('Tapped ${guests[i]}'),
+              debug: true,
+              debugTileBounds: true,
+              debugOuterBorderColor: Colors.greenAccent,
+              debugTileBorderColor: Colors.blueAccent,
+              debugBackground: Colors.purple,
             );
 
             return Column(
