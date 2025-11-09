@@ -1,99 +1,65 @@
+import 'package:chekpleze_flutter/view-widgets/diamond_two_row_lattice.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:chekpleze_flutter/app_state.dart';
-import 'package:assorted_layout_widgets/assorted_layout_widgets.dart';
 
-class TableScreen extends StatefulWidget {
+class TableScreen extends StatelessWidget {
   const TableScreen({super.key});
 
-  @override
-  State<TableScreen> createState() => _TableScreenState();
-}
-
-class _TableScreenState extends State<TableScreen> {
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Scaffold(
-      body: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              const Seats()
-            ],
-          )
-      ),
-    );
+  void _showReceiptScreen(BuildContext context) {
+    Navigator.of(context).pushNamed('/receipt-screen');
   }
-}
-
-class Seats extends StatelessWidget {
-  const Seats({
-    super.key,
-  });
 
   @override
   Widget build(BuildContext context) {
-    final store = StoreProvider.of<AppState>(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Table')), // Optional, helps navigation.
+      body: SafeArea(
+        child: StoreConnector<AppState, List<String>>(
+          converter: (store) => store.state.getGuests,
+          builder: (context, guests) {
+            final lattice = DiamondTwoRowLattice(
+              count: guests.length,
+              diamondSize: 140,
+              spacing: 8,
+              borderColor: Colors.red,
+              borderWidth: 2,
+              fillColor: Colors.white,
+              itemBuilder: (context, i) => Text(
+                guests[i],
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              onTapIndex: (i) => debugPrint('Tapped ${guests[i]}'),
+            );
 
-    void showReceiptScreen() {
-      Navigator.of(context).pushNamed('/receipt-screen');
-    }
-
-    return Expanded(
-      child: StoreConnector<AppState, AppState>(
-        converter: (store) => store.state,
-        builder: (_, state) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 20,
-            children: [
-              const Align(
-                alignment: Alignment.topLeft,
-                child: Text('Seats', style: TextStyle(fontSize: 20.0))
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black)
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text('Seats', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                 ),
-                height: 250,
-                child: RowSuper(
-                  innerDistance: 8.0,
-                  outerDistance: 8.0,
-                  children: [
-                    ...state.getGuests
-                      .asMap()
-                      .entries
-                      .map((guest) => ListTile(
-                            dense: true,
-                            iconColor: Colors.red,
-                            title: Text(guest.value,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium),
-                            trailing: guest.key > 0
-                                ? IconButton(
-                                    onPressed: () {
-                                      store.dispatch(
-                                          RemoveGuestAction(guest.value));
-                                    },
-                                    icon: const Icon(Icons.close))
-                                : null,
-                          )
-                        )
-                      ,
-                  ],
+                // Expanded area: full width; lattice centered horizontally, scrolls horizontally if overflow.
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: lattice,
+                    ),
+                  ),
                 ),
-              ),
-              ElevatedButton(
-                onPressed: showReceiptScreen,
-                child: const Text('Receipt'),
-              ),
-            ],
-          );
-        },
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ElevatedButton(
+                    onPressed: () => _showReceiptScreen(context),
+                    child: const Text('Receipt'),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
