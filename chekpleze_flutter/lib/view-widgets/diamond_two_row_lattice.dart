@@ -24,6 +24,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
     this.cornerRadius = 8.0,
     this.spacing = 4.0,
     this.stagger = true,
+    this.isDragging = false,
     this.itemBuilder,
     this.onTapIndex,
     this.debug = false,
@@ -48,6 +49,8 @@ class DiamondTwoRowLattice extends StatelessWidget {
   final double cornerRadius;
   final double spacing;
   final bool stagger;
+  /// When true, suppresses hover overlay on tiles (active while a drag is in progress).
+  final bool isDragging;
   final IndexedWidgetBuilder? itemBuilder;
   final ValueChanged<int>? onTapIndex;
   // Debugging helpers
@@ -149,6 +152,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
           borderColor: borderColor,
           borderWidth: borderWidth,
           cornerRadius: cornerRadius,
+          isDragging: isDragging,
           baseFillColor: fillColor,
           isSelected: isSelected,
           selectionMode: selectionMode,
@@ -210,6 +214,7 @@ class _BuildDroppableTile extends StatelessWidget {
     required this.borderColor,
     required this.borderWidth,
     required this.cornerRadius,
+    required this.isDragging,
     required this.baseFillColor,
     required this.isSelected,
     required this.selectionMode,
@@ -229,6 +234,7 @@ class _BuildDroppableTile extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
   final double cornerRadius;
+  final bool isDragging;
   final Color baseFillColor;
   final bool isSelected;
   final bool selectionMode;
@@ -263,6 +269,7 @@ class _BuildDroppableTile extends StatelessWidget {
             borderColor: borderColor,
             borderWidth: borderWidth,
             cornerRadius: cornerRadius,
+            suppressHover: isDragging,
             fillColor: fill,
             onTap: onTapIndex == null ? null : () => onTapIndex!(index),
             child: child,

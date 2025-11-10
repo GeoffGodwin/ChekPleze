@@ -114,6 +114,7 @@ class DiamondTile extends StatelessWidget {
     this.borderColor = Colors.black,
     this.borderWidth = 2.0,
     this.cornerRadius = 8.0,
+    this.suppressHover = false,
     this.onTap,
     this.onLongPress,
     this.contentPadding = const EdgeInsets.all(8.0),
@@ -126,6 +127,8 @@ class DiamondTile extends StatelessWidget {
   final double borderWidth;
   /// Rounded corner radius for diamond tips.
   final double cornerRadius;
+  /// When true, disables InkWell hover overlay (used during active drag operations).
+  final bool suppressHover;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   /// Padding inside the diamond for its child content.
@@ -147,6 +150,16 @@ class DiamondTile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           customBorder: DiamondBorder(cornerRadius: cornerRadius),
+          // Only override overlayColor when we actively want to suppress hover.
+          overlayColor: suppressHover
+              ? MaterialStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(MaterialState.hovered)) {
+                    // Return fully transparent to disable grey hover highlight.
+                    return Colors.transparent;
+                  }
+                  return null; // Keep other states (pressed/focus) default.
+                })
+              : null,
           onTap: onTap,
           onLongPress: onLongPress,
           child: Ink(

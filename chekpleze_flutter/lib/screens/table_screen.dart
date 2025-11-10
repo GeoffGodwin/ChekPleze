@@ -13,6 +13,7 @@ class TableScreen extends StatefulWidget {
 class _TableScreenState extends State<TableScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  bool _isDraggingDraft = false; // Track active drag to suppress tile hover.
 
   void _showReceiptScreen(BuildContext context) {
     Navigator.of(context).pushNamed('/receipt-screen');
@@ -59,6 +60,7 @@ class _TableScreenState extends State<TableScreen> {
               borderColor: Colors.red,
               borderWidth: 2,
               fillColor: Colors.white,
+              isDragging: _isDraggingDraft,
               itemBuilder: (context, i) => _SeatLabel(name: guests[i]),
               onTapIndex: state.assigning
                   ? (i) => store.dispatch(ToggleAssignSeatAction(i))
@@ -169,6 +171,9 @@ class _TableScreenState extends State<TableScreen> {
                                           name: state.draftName,
                                           price: double.tryParse(state.draftPrice) ?? 0.0,
                                         ),
+                                        onDragStarted: () => setState(() => _isDraggingDraft = true),
+                                        onDragEnd: (_) => setState(() => _isDraggingDraft = false),
+                                        onDraggableCanceled: (_, __) => setState(() => _isDraggingDraft = false),
                                         feedback: Material(
                                           color: Colors.transparent,
                                           child: Chip(label: Text('${state.draftName} - ${state.draftPrice}')),
