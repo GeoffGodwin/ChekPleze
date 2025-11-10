@@ -3,11 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:chekpleze_flutter/app_state.dart';
 
-class TableScreen extends StatelessWidget {
+class TableScreen extends StatefulWidget {
   const TableScreen({super.key});
+
+  @override
+  State<TableScreen> createState() => _TableScreenState();
+}
+
+class _TableScreenState extends State<TableScreen> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
 
   void _showReceiptScreen(BuildContext context) {
     Navigator.of(context).pushNamed('/receipt-screen');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    super.dispose();
   }
 
   @override
@@ -21,6 +36,21 @@ class TableScreen extends StatelessWidget {
             final store = StoreProvider.of<AppState>(context);
             final state = store.state;
             final isReady = state.isDraftValid;
+            // Keep text fields in sync with Redux state, including after Confirm/Cancel.
+            if (_nameController.text != state.draftName) {
+              _nameController.value = _nameController.value.copyWith(
+                text: state.draftName,
+                selection: TextSelection.collapsed(offset: state.draftName.length),
+                composing: TextRange.empty,
+              );
+            }
+            if (_priceController.text != state.draftPrice) {
+              _priceController.value = _priceController.value.copyWith(
+                text: state.draftPrice,
+                selection: TextSelection.collapsed(offset: state.draftPrice.length),
+                composing: TextRange.empty,
+              );
+            }
             final lattice = DiamondTwoRowLattice(
               count: guests.length,
               diamondSize: 140,
@@ -32,7 +62,7 @@ class TableScreen extends StatelessWidget {
               onTapIndex: state.assigning
                   ? (i) => store.dispatch(ToggleAssignSeatAction(i))
                   : (i) => debugPrint('Tapped ${guests[i]}'),
-              dropEnabled: isReady,
+              dropEnabled: isReady && !state.assigning,
               onItemDropped: (i, data) {
                 if (data is _DraftPayload) {
                   store.dispatch(DirectAssignItemToSeatAction(
@@ -45,8 +75,9 @@ class TableScreen extends StatelessWidget {
               selectionMode: state.assigning,
               selectedIndices: state.draftSelectedSeats,
               buildHighlightFill: (i, isSelected, isHover) {
-                if (isSelected) return Colors.greenAccent.withOpacity(0.6);
-                if (isHover) return Colors.amber.withOpacity(0.5);
+                // Replaced deprecated withOpacity with withAlpha for precision & to silence analyzer infos.
+                if (isSelected) return Colors.greenAccent.withAlpha((0.6 * 255).round()); // ~153
+                if (isHover) return Colors.amber.withAlpha((0.5 * 255).round()); // 128
                 return Colors.white;
               },
               debug: true,
@@ -72,6 +103,7 @@ class TableScreen extends StatelessWidget {
                           SizedBox(
                             width: 240,
                             child: TextField(
+                              controller: _nameController,
                               onChanged: (v) => store.dispatch(DraftSetNameAction(v)),
                               decoration: const InputDecoration(
                                 labelText: 'Item',
@@ -85,6 +117,7 @@ class TableScreen extends StatelessWidget {
                             width: 120,
                             child: TextField(
                               keyboardType: TextInputType.number,
+                              controller: _priceController,
                               onChanged: (v) => store.dispatch(DraftSetPriceAction(v)),
                               decoration: const InputDecoration(
                                 labelText: 'Price',
@@ -95,43 +128,45 @@ class TableScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton(
-                            onPressed: isReady
-                                ? () {
-                                    if (state.assigning) {
-                                      store.dispatch(ConfirmAssignItemAction());
-                                    } else {
-                                      store.dispatch(EnterAssignModeAction());
-                                    }
-                                  }
-                                : null,
+                            onPressed: state.assigning
+                                ? (state.draftSelectedSeats.isNotEmpty
+                                    ? () => store.dispatch(ConfirmAssignItemAction())
+                                    : null)
+                                : (isReady
+                                    ? () => store.dispatch(EnterAssignModeAction())
+                                    : null),
                             child: Text(state.assigning ? 'Confirm' : 'Assign'),
                           ),
                           const SizedBox(width: 12),
-                          Opacity(
-                            opacity: isReady ? 1.0 : 0.4,
-                            child: IgnorePointer(
-                              ignoring: !isReady,
-                              child: Draggable<_DraftPayload>(
-                                data: _DraftPayload(
-                                  name: state.draftName,
-                                  price: double.tryParse(state.draftPrice) ?? 0.0,
-                                ),
-                                feedback: Material(
-                                  color: Colors.transparent,
-                                  child: Chip(label: Text('${state.draftName} - ${state.draftPrice}')),
-                                ),
-                                childWhenDragging: const Icon(Icons.drag_indicator, color: Colors.grey),
-                                child: const Icon(Icons.drag_indicator),
-                              ),
-                            ),
+                          // Keep layout stable: show either draggable icon or an X to cancel assign.
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: state.assigning
+                                ? IconButton(
+                                    tooltip: 'Cancel assign',
+                                    onPressed: () => store.dispatch(CancelAssignModeAction()),
+                                    icon: const Icon(Icons.close),
+                                  )
+                                : Opacity(
+                                    opacity: isReady ? 1.0 : 0.4,
+                                    child: IgnorePointer(
+                                      ignoring: !isReady,
+                                      child: Draggable<_DraftPayload>(
+                                        data: _DraftPayload(
+                                          name: state.draftName,
+                                          price: double.tryParse(state.draftPrice) ?? 0.0,
+                                        ),
+                                        feedback: Material(
+                                          color: Colors.transparent,
+                                          child: Chip(label: Text('${state.draftName} - ${state.draftPrice}')),
+                                        ),
+                                        childWhenDragging: const Icon(Icons.drag_indicator, color: Colors.grey),
+                                        child: const Icon(Icons.drag_indicator),
+                                      ),
+                                    ),
+                                  ),
                           ),
-                          if (state.assigning) ...[
-                            const SizedBox(width: 8),
-                            TextButton(
-                              onPressed: () => store.dispatch(CancelAssignModeAction()),
-                              child: const Text('Cancel'),
-                            )
-                          ],
                         ],
                       ),
                     ),

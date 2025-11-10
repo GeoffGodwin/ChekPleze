@@ -123,7 +123,8 @@ class DiamondTwoRowLattice extends StatelessWidget {
               height: diamondSize + spacing,
               decoration: BoxDecoration(
                 border: Border.all(color: debugTileBorderColor, width: 1),
-                color: debugBackground?.withOpacity(0.05),
+                // withOpacity deprecated -> use withAlpha.
+                color: debugBackground?.withAlpha((0.05 * 255).round()), // ~13
               ),
             ),
           ),
@@ -162,7 +163,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 border: Border.all(color: debugOuterBorderColor, width: 1.5),
-                color: debugBackground?.withOpacity(0.04),
+                color: debugBackground?.withAlpha((0.04 * 255).round()), // ~10
               ),
             ),
           ),
@@ -173,7 +174,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: debug && debugBackground != null ? debugBackground!.withOpacity(0.02) : null,
+  color: debug && debugBackground != null ? debugBackground!.withAlpha((0.02 * 255).round()) : null, // ~5
       child: Stack(children: stackChildren),
     );
   }
@@ -238,11 +239,11 @@ class _BuildDroppableTile extends StatelessWidget {
         builder: (context, candidate, rejected) {
           final isHover = dropEnabled && candidate.isNotEmpty;
           final fill = buildHighlightFill?.call(index, isSelected, isHover) ??
-              (isSelected
-                  ? Colors.amberAccent.withOpacity(0.7)
-                  : isHover
-                      ? baseFillColor.withOpacity(0.6)
-                      : baseFillColor);
+        (isSelected
+          ? Colors.amberAccent.withAlpha((0.7 * 255).round()) // ~179
+          : isHover
+            ? baseFillColor.withAlpha((0.6 * 255).round()) // ~153
+            : baseFillColor);
           return Padding(
             padding: EdgeInsets.all(spacing / 2),
             child: DiamondTile(
