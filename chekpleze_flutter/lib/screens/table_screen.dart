@@ -1,4 +1,5 @@
 import 'package:chekpleze_flutter/view-widgets/diamond_two_row_lattice.dart';
+import 'package:chekpleze_flutter/view-widgets/receipt_progress_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:chekpleze_flutter/app_state.dart';
@@ -205,12 +206,9 @@ class _TableScreenState extends State<TableScreen> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: ElevatedButton(
-                    onPressed: () => _showReceiptScreen(context),
-                    child: const Text('Receipt'),
-                  ),
+                // Replace simple button with receipt progress paper stub.
+                ReceiptProgressSheet(
+                  onOpenFullReceipt: () => _showReceiptScreen(context),
                 ),
               ],
             );
@@ -244,4 +242,6 @@ class _SeatLabel extends StatelessWidget {
     );
   }
 }
+
+// (imports consolidated at top)
 

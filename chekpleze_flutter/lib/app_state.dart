@@ -24,6 +24,10 @@ class AppState {
   final String draftPrice; // raw text, parse lazily
   final bool assigning; // selection mode active
   final Set<int> draftSelectedSeats;
+  // Bill details (set from BillDetailsScreen)
+  final double billSubtotal; // pre-tax amount
+  final double billTaxTotal; // absolute tax amount
+  final double billTipPercent; // tip percent (0-100), applied on (subtotal + tax)
 
   List<String> get getGuests => _guests;
   bool get isDraftValid => draftName.trim().isNotEmpty && double.tryParse(draftPrice) != null;
@@ -35,6 +39,9 @@ class AppState {
     this.draftPrice = '',
     this.assigning = false,
     Set<int>? draftSelectedSeats,
+    this.billSubtotal = 0.0,
+    this.billTaxTotal = 0.0,
+    this.billTipPercent = 0.0,
   }) : draftSelectedSeats = draftSelectedSeats ?? <int>{};
 
   AppState.initialState()
@@ -43,7 +50,10 @@ class AppState {
         draftName = '',
         draftPrice = '',
         assigning = false,
-        draftSelectedSeats = <int>{};
+        draftSelectedSeats = <int>{},
+        billSubtotal = 0.0,
+        billTaxTotal = 0.0,
+        billTipPercent = 20.0;
 
   AppState copyWith({
     List<String>? guests,
@@ -52,6 +62,9 @@ class AppState {
     String? draftPrice,
     bool? assigning,
     Set<int>? draftSelectedSeats,
+    double? billSubtotal,
+    double? billTaxTotal,
+    double? billTipPercent,
   }) => AppState(
         guests ?? _guests,
         items: items ?? this.items,
@@ -59,7 +72,14 @@ class AppState {
         draftPrice: draftPrice ?? this.draftPrice,
         assigning: assigning ?? this.assigning,
         draftSelectedSeats: draftSelectedSeats ?? this.draftSelectedSeats,
+        billSubtotal: billSubtotal ?? this.billSubtotal,
+        billTaxTotal: billTaxTotal ?? this.billTaxTotal,
+        billTipPercent: billTipPercent ?? this.billTipPercent,
       );
+
+  // Computed bill values
+  double get billTipTotal => (billSubtotal + billTaxTotal) * (billTipPercent / 100.0);
+  double get billTotal => billSubtotal + billTaxTotal + billTipTotal;
 }
 
 class AddGuestAction {
@@ -92,6 +112,11 @@ class DirectAssignItemToSeatAction {
   final int seatIndex;
   DirectAssignItemToSeatAction({required this.name, required this.price, required this.seatIndex});
 }
+
+// Bill details actions
+class SetBillSubtotalAction { final double value; SetBillSubtotalAction(this.value); }
+class SetBillTaxTotalAction { final double value; SetBillTaxTotalAction(this.value); }
+class SetBillTipPercentAction { final double value; SetBillTipPercentAction(this.value); }
 
 class GetGuestAction {
   final List<String> guests;
@@ -184,6 +209,13 @@ AppState appStateReducer(AppState state, dynamic action) {
       assigning: false,
       draftSelectedSeats: <int>{},
     );
+  } else if (action is SetBillSubtotalAction) {
+    return state.copyWith(guests: guests, billSubtotal: action.value);
+  } else if (action is SetBillTaxTotalAction) {
+    return state.copyWith(guests: guests, billTaxTotal: action.value);
+  } else if (action is SetBillTipPercentAction) {
+    final pct = action.value.clamp(0.0, 100.0);
+    return state.copyWith(guests: guests, billTipPercent: pct);
   }
 
   // Default passthrough (only guests changed or unrelated action)
