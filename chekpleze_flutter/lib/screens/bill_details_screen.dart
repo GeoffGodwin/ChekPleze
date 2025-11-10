@@ -16,12 +16,35 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
   final _subtotalController = TextEditingController();
   final _taxController = TextEditingController();
   final _tipPercentController = TextEditingController();
+  final _tipAbsoluteController = TextEditingController();
   // Total is derived; show read-only preview
 
   bool _editingTipPercent = false;
   final _subtotalFocus = FocusNode();
   final _taxFocus = FocusNode();
   final _tipPercentFocus = FocusNode();
+  final _tipAbsoluteFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Clear zero-ish values on focus to make editing easier.
+    void clearIfZeroOnFocus(FocusNode node, TextEditingController c) {
+      node.addListener(() {
+        if (node.hasFocus) {
+          final cleaned = c.text.replaceAll(RegExp('[^0-9\.]'), '');
+          final val = double.tryParse(cleaned) ?? 0.0;
+          if (val == 0.0 && c.text.isNotEmpty) {
+            c.clear();
+          }
+        }
+      });
+    }
+    clearIfZeroOnFocus(_subtotalFocus, _subtotalController);
+    clearIfZeroOnFocus(_taxFocus, _taxController);
+    clearIfZeroOnFocus(_tipPercentFocus, _tipPercentController);
+    clearIfZeroOnFocus(_tipAbsoluteFocus, _tipAbsoluteController);
+  }
 
   @override
   void dispose() {
@@ -44,7 +67,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
       builder: (context, vm) {
         // Update controllers from store ONLY when field is not focused (prevents keystroke override).
         if (!_subtotalFocus.hasFocus) {
-          final subStr = vm.subtotal.toString();
+          final subStr = vm.subtotal.toStringAsFixed(2);
           if (_subtotalController.text != subStr) {
             _subtotalController.value = _subtotalController.value.copyWith(
               text: subStr,
@@ -54,7 +77,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
           }
         }
         if (!_taxFocus.hasFocus) {
-          final taxStr = vm.taxTotal.toString();
+          final taxStr = vm.taxTotal.toStringAsFixed(2);
           if (_taxController.text != taxStr) {
             _taxController.value = _taxController.value.copyWith(
               text: taxStr,
@@ -69,6 +92,16 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
             _tipPercentController.value = _tipPercentController.value.copyWith(
               text: tipPctStr,
               selection: TextSelection.collapsed(offset: tipPctStr.length),
+              composing: TextRange.empty,
+            );
+          }
+        }
+        if (!_tipAbsoluteFocus.hasFocus) {
+          final tipAbsStr = vm.tipTotal.toStringAsFixed(2);
+          if (_tipAbsoluteController.text != tipAbsStr) {
+            _tipAbsoluteController.value = _tipAbsoluteController.value.copyWith(
+              text: tipAbsStr,
+              selection: TextSelection.collapsed(offset: tipAbsStr.length),
               composing: TextRange.empty,
             );
           }
@@ -92,7 +125,8 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(labelText: '*Subtotal', border: OutlineInputBorder()),
                           onChanged: (v) {
-                            final val = double.tryParse(v) ?? 0.0;
+                            final cleaned = v.replaceAll(RegExp('[^0-9\.]'), '');
+                            final val = double.tryParse(cleaned) ?? 0.0;
                             vm.setSubtotal(val);
                           },
                         ),
@@ -106,7 +140,8 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(labelText: '*Total Tax', border: OutlineInputBorder()),
                           onChanged: (v) {
-                            final val = double.tryParse(v) ?? 0.0;
+                            final cleaned = v.replaceAll(RegExp('[^0-9\.]'), '');
+                            final val = double.tryParse(cleaned) ?? 0.0;
                             vm.setTax(val);
                           },
                         ),
@@ -124,7 +159,8 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                                 keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(labelText: 'Tip %', border: OutlineInputBorder()),
                                 onSubmitted: (v) {
-                                  final pct = double.tryParse(v) ?? vm.tipPercent;
+                                  final cleaned = v.replaceAll(RegExp('[^0-9\.]'), '');
+                                  final pct = double.tryParse(cleaned) ?? vm.tipPercent;
                                   vm.setTipPercent(pct);
                                   setState(() => _editingTipPercent = false);
                                 },
@@ -152,14 +188,34 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                               ),
                       ),
                       SizedBox(
-                        width: 140,
+                        width: 160,
                         child: TextField(
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            labelText: 'Tip Total',
-                            border: const OutlineInputBorder(),
-                            hintText: vm.tipTotal.toStringAsFixed(2),
+                          controller: _tipAbsoluteController,
+                          focusNode: _tipAbsoluteFocus,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Tip Total (\$)',
+                            border: OutlineInputBorder(),
                           ),
+                          onChanged: (v) {
+                            final cleaned = v.replaceAll(RegExp('[^0-9\.]'), '');
+                            final val = double.tryParse(cleaned) ?? 0.0;
+                            vm.setTipAbsolute(val);
+                          },
+                          onSubmitted: (v) {
+                            final cleaned = v.replaceAll(RegExp('[^0-9\.]'), '');
+                            final val = double.tryParse(cleaned) ?? 0.0;
+                            vm.setTipAbsolute(val);
+                            // force percent controller update after absolute entry
+                            if (!_tipPercentFocus.hasFocus) {
+                              final tipPctStr = vm.tipPercent.toStringAsFixed(0);
+                              _tipPercentController.value = _tipPercentController.value.copyWith(
+                                text: tipPctStr,
+                                selection: TextSelection.collapsed(offset: tipPctStr.length),
+                                composing: TextRange.empty,
+                              );
+                            }
+                          },
                         ),
                       ),
                     ],
@@ -167,13 +223,13 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                   const SizedBox(height: 16),
                   SizedBox(
                     width: 260,
-                    child: TextField(
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: '*Total',
-                        border: const OutlineInputBorder(),
-                        hintText: vm.grandTotal.toStringAsFixed(2),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('*Total', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 6),
+                        Text(vm.grandTotal.toStringAsFixed(2), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
                     ),
                   ),
                   const Spacer(),
@@ -210,6 +266,7 @@ class _BillVM {
   final void Function(double) setSubtotal;
   final void Function(double) setTax;
   final void Function(double) setTipPercent;
+  final void Function(double) setTipAbsolute;
 
   _BillVM({
     required this.subtotal,
@@ -220,6 +277,7 @@ class _BillVM {
     required this.setSubtotal,
     required this.setTax,
     required this.setTipPercent,
+    required this.setTipAbsolute,
   });
 
   factory _BillVM.fromStore(Store<AppState> store) {
@@ -233,6 +291,7 @@ class _BillVM {
       setSubtotal: (v) => store.dispatch(SetBillSubtotalAction(v)),
       setTax: (v) => store.dispatch(SetBillTaxTotalAction(v)),
       setTipPercent: (v) => store.dispatch(SetBillTipPercentAction(v)),
+      setTipAbsolute: (v) => store.dispatch(SetBillTipAbsoluteAction(v)),
     );
   }
 }

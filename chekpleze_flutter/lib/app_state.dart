@@ -117,6 +117,7 @@ class DirectAssignItemToSeatAction {
 class SetBillSubtotalAction { final double value; SetBillSubtotalAction(this.value); }
 class SetBillTaxTotalAction { final double value; SetBillTaxTotalAction(this.value); }
 class SetBillTipPercentAction { final double value; SetBillTipPercentAction(this.value); }
+class SetBillTipAbsoluteAction { final double value; SetBillTipAbsoluteAction(this.value); }
 
 class GetGuestAction {
   final List<String> guests;
@@ -215,6 +216,10 @@ AppState appStateReducer(AppState state, dynamic action) {
     return state.copyWith(guests: guests, billTaxTotal: action.value);
   } else if (action is SetBillTipPercentAction) {
     final pct = action.value.clamp(0.0, 100.0);
+    return state.copyWith(guests: guests, billTipPercent: pct);
+  } else if (action is SetBillTipAbsoluteAction) {
+    final base = state.billSubtotal + state.billTaxTotal;
+    final pct = base > 0 ? (action.value / base) * 100.0 : 0.0;
     return state.copyWith(guests: guests, billTipPercent: pct);
   }
 
