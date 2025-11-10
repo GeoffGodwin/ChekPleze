@@ -21,6 +21,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
     this.borderColor = Colors.black,
     this.borderWidth = 2.0,
     this.fillColor = Colors.white,
+    this.cornerRadius = 8.0,
     this.spacing = 4.0,
     this.stagger = true,
     this.itemBuilder,
@@ -43,6 +44,8 @@ class DiamondTwoRowLattice extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
   final Color fillColor;
+  /// Rounded corner radius for the diamond tips.
+  final double cornerRadius;
   final double spacing;
   final bool stagger;
   final IndexedWidgetBuilder? itemBuilder;
@@ -145,6 +148,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
           diamondSize: diamondSize,
           borderColor: borderColor,
           borderWidth: borderWidth,
+          cornerRadius: cornerRadius,
           baseFillColor: fillColor,
           isSelected: isSelected,
           selectionMode: selectionMode,
@@ -203,6 +207,7 @@ class _BuildDroppableTile extends StatelessWidget {
     required this.diamondSize,
     required this.borderColor,
     required this.borderWidth,
+    required this.cornerRadius,
     required this.baseFillColor,
     required this.isSelected,
     required this.selectionMode,
@@ -221,6 +226,7 @@ class _BuildDroppableTile extends StatelessWidget {
   final double diamondSize;
   final Color borderColor;
   final double borderWidth;
+  final double cornerRadius;
   final Color baseFillColor;
   final bool isSelected;
   final bool selectionMode;
@@ -256,6 +262,7 @@ class _BuildDroppableTile extends StatelessWidget {
               size: diamondSize,
               borderColor: borderColor,
               borderWidth: borderWidth,
+              cornerRadius: cornerRadius,
               fillColor: fill,
               onTap: onTapIndex == null ? null : () => onTapIndex!(index),
               child: child,

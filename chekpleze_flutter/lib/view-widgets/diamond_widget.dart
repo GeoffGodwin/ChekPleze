@@ -1,22 +1,69 @@
 import 'package:flutter/material.dart';
 
+/// A custom diamond (rotated square) border that supports rounded tips
+/// via [cornerRadius]. The radius is clamped so arcs never overlap.
 class DiamondBorder extends OutlinedBorder {
-  const DiamondBorder({super.side = BorderSide.none});
+  const DiamondBorder({super.side = BorderSide.none, this.cornerRadius = 0});
+
+  /// Corner radius for rounding the diamond tips. 0 = sharp corners.
+  final double cornerRadius;
 
   @override
   OutlinedBorder copyWith({BorderSide? side}) =>
-      DiamondBorder(side: side ?? this.side);
+      DiamondBorder(side: side ?? this.side, cornerRadius: cornerRadius);
 
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+  Path _buildRoundedDiamondPath(Rect rect, double radius) {
     final cx = rect.center.dx, cy = rect.center.dy;
+    final top = Offset(cx, rect.top);
+    final right = Offset(rect.right, cy);
+    final bottom = Offset(cx, rect.bottom);
+    final left = Offset(rect.left, cy);
+
+    double edgeLength(Offset a, Offset b) => (b - a).distance;
+    final lengths = [edgeLength(top, right), edgeLength(right, bottom), edgeLength(bottom, left), edgeLength(left, top)];
+    final maxR = lengths.map((l) => l * 0.5).reduce((a, b) => a < b ? a : b);
+    final r = radius.clamp(0.0, maxR);
+    if (r <= 0) {
+      return Path()
+        ..moveTo(top.dx, top.dy)
+        ..lineTo(right.dx, right.dy)
+        ..lineTo(bottom.dx, bottom.dy)
+        ..lineTo(left.dx, left.dy)
+        ..close();
+    }
+
+    Offset along(Offset p0, Offset p1, double d) {
+      final v = p1 - p0;
+      final len = v.distance;
+      if (len == 0) return p0;
+      final t = (d / len).clamp(0.0, 1.0);
+      return p0 + v * t;
+    }
+
+    final tEntry = along(left, top, edgeLength(left, top) - r); // entering top corner from left
+    final tExit = along(top, right, r);                         // exiting top corner toward right
+    final rEntry = along(top, right, edgeLength(top, right) - r);
+    final rExit = along(right, bottom, r);
+    final bEntry = along(right, bottom, edgeLength(right, bottom) - r);
+    final bExit = along(bottom, left, r);
+    final lEntry = along(bottom, left, edgeLength(bottom, left) - r);
+    final lExit = along(left, top, r);
+
     return Path()
-      ..moveTo(cx, rect.top)           // top
-      ..lineTo(rect.right, cy)         // right
-      ..lineTo(cx, rect.bottom)        // bottom
-      ..lineTo(rect.left, cy)          // left
+      ..moveTo(tEntry.dx, tEntry.dy)
+      ..arcToPoint(tExit, radius: Radius.circular(r), clockwise: true)
+      ..lineTo(rEntry.dx, rEntry.dy)
+      ..arcToPoint(rExit, radius: Radius.circular(r), clockwise: true)
+      ..lineTo(bEntry.dx, bEntry.dy)
+      ..arcToPoint(bExit, radius: Radius.circular(r), clockwise: true)
+      ..lineTo(lEntry.dx, lEntry.dy)
+      ..arcToPoint(lExit, radius: Radius.circular(r), clockwise: true)
       ..close();
   }
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      _buildRoundedDiamondPath(rect, cornerRadius);
 
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
@@ -29,34 +76,33 @@ class DiamondBorder extends OutlinedBorder {
 
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.all(side.width);
-  
-  /// Inner path used by ink effects. We shrink the rect by the border [side.width]
-  /// to avoid painting ink under the border stroke.
+
   @override
   Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
-    if (side.width <= 0) {
-      return getOuterPath(rect, textDirection: textDirection);
-    }
+    if (side.width <= 0) return getOuterPath(rect, textDirection: textDirection);
     final shrink = side.width;
-    // Ensure we don't invert the rect if border is huge.
     final safeRect = Rect.fromLTWH(
       rect.left + shrink,
       rect.top + shrink,
       (rect.width - 2 * shrink).clamp(0.0, rect.width),
       (rect.height - 2 * shrink).clamp(0.0, rect.height),
     );
-    return getOuterPath(safeRect, textDirection: textDirection);
+    // Recompute path with same radius (implicitly clamped to new rect).
+    return _buildRoundedDiamondPath(safeRect, cornerRadius);
   }
-  
-  /// Scale the border. Conventionally we scale the stroke width linearly.
+
   @override
-  ShapeBorder scale(double t) {
-    return DiamondBorder(
-      side: side == BorderSide.none
-          ? BorderSide.none
-          : side.copyWith(width: side.width * t),
-    );
-  }
+  ShapeBorder scale(double t) => DiamondBorder(
+        side: side == BorderSide.none ? BorderSide.none : side.copyWith(width: side.width * t),
+        cornerRadius: cornerRadius * t,
+      );
+
+  @override
+  int get hashCode => Object.hash(side, cornerRadius);
+
+  @override
+  bool operator ==(Object other) =>
+      other is DiamondBorder && other.side == side && other.cornerRadius == cornerRadius;
 }
 
 class DiamondTile extends StatelessWidget {
@@ -67,6 +113,7 @@ class DiamondTile extends StatelessWidget {
     this.fillColor = Colors.white,
     this.borderColor = Colors.black,
     this.borderWidth = 2.0,
+    this.cornerRadius = 8.0,
     this.onTap,
     this.onLongPress,
     this.contentPadding = const EdgeInsets.all(8.0),
@@ -77,6 +124,8 @@ class DiamondTile extends StatelessWidget {
   final Color fillColor;
   final Color borderColor;
   final double borderWidth;
+  /// Rounded corner radius for diamond tips.
+  final double cornerRadius;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   /// Padding inside the diamond for its child content.
@@ -86,6 +135,7 @@ class DiamondTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = DiamondBorder(
       side: BorderSide(color: borderColor, width: borderWidth),
+      cornerRadius: cornerRadius,
     );
 
     return SizedBox(
@@ -93,10 +143,10 @@ class DiamondTile extends StatelessWidget {
       height: size,
       child: Material(
         color: Colors.transparent,
-        shape: const DiamondBorder(),          // clip/ripple shape
+        shape: DiamondBorder(cornerRadius: cornerRadius), // clip & ripple shape
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          customBorder: const DiamondBorder(), // shape-aware hit test
+          customBorder: DiamondBorder(cornerRadius: cornerRadius),
           onTap: onTap,
           onLongPress: onLongPress,
           child: Ink(

@@ -20,8 +20,8 @@ class _TableScreenState extends State<TableScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _priceController.dispose();
+    _nameController.dispose();  //Controller for the name of the item
+    _priceController.dispose(); //Controller for the price of the item
     super.dispose();
   }
 
@@ -54,7 +54,8 @@ class _TableScreenState extends State<TableScreen> {
             final lattice = DiamondTwoRowLattice(
               count: guests.length,
               diamondSize: 140,
-              spacing: 8,
+              cornerRadius: 16,
+              spacing: 12,
               borderColor: Colors.red,
               borderWidth: 2,
               fillColor: Colors.white,

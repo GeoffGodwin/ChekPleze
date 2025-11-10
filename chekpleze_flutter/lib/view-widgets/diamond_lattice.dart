@@ -16,6 +16,7 @@ class DiamondLattice extends StatelessWidget {
     this.borderColor = Colors.black,
     this.borderWidth = 2.0,
     this.fillColor = Colors.white,
+    this.cornerRadius = 8.0,
     this.spacing = 8.0,
     this.tight = true,
     this.onTapIndex,
@@ -32,6 +33,8 @@ class DiamondLattice extends StatelessWidget {
   final Color borderColor;
   final double borderWidth;
   final Color fillColor;
+  /// Rounded corner radius for each diamond tile.
+  final double cornerRadius;
   /// Extra spacing around each diamond (outside of the geometric tight packing).
   final double spacing;
   /// If true, vertical spacing is reduced so tips touch; if false regular spacing used.
@@ -71,6 +74,7 @@ class DiamondLattice extends StatelessWidget {
                 borderColor: borderColor,
                 borderWidth: borderWidth,
                 fillColor: fillColor,
+                cornerRadius: cornerRadius,
                 onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
                 child: _buildChild(context, currentIndex),
               ),
