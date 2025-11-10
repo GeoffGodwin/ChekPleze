@@ -72,19 +72,20 @@ class DiamondTwoRowLattice extends StatelessWidget {
     if (count <= 0) return const SizedBox();
   // columns previously used for rough sizing; bounding box now computed precisely.
 
-    // First pass: compute placements to calculate exact bounding box (avoids extra side padding).
-    final placements = <Map<String, dynamic>>[];
-    // Centering correction base offset: balances visual left bias in staggered layout.
-    final baseOffsetX = stagger ? diamondSize / 4 : 0.0;
-    final verticalFactor = stagger ? 0.5 : 0.6; // tweak for visual balance
+  // Spacing model: treat [spacing] as a margin between tiles on all sides.
+  final horizontalStep = diamondSize + spacing;
+  final verticalStep = (stagger ? diamondSize * 0.5 : diamondSize * 0.6) + spacing;
+
+  // First pass: compute placements to calculate exact bounding box.
+  final placements = <Map<String, dynamic>>[];
 
     for (int i = 0; i < count; i++) {
       final col = i ~/ 2; // floor(i/2)
       final isTopRow = i % 2 == 0;
       final row = isTopRow ? 0 : 1;
-      final dy = row * diamondSize * verticalFactor;
-      double dx = baseOffsetX + col * diamondSize;
-      if (stagger && row == 1) dx += diamondSize / 2;
+      final dy = row * verticalStep;
+      double dx = col * horizontalStep;
+      if (stagger && row == 1) dx += horizontalStep / 2;
       placements.add({'i': i, 'dx': dx, 'dy': dy});
     }
 
@@ -95,12 +96,11 @@ class DiamondTwoRowLattice extends StatelessWidget {
     for (final p in placements) {
       final dx = p['dx'] as double;
       final dy = p['dy'] as double;
-      // dx/dy represent the top-left of the padded tile container (before Padding applies inside),
-      // so the full padded bounds are exactly [dx .. dx + diamondSize + spacing].
-      final left = dx;
-      final right = dx + diamondSize + spacing;
+  // With explicit placement steps including spacing, the tile extent is [dx .. dx + diamondSize].
+  final left = dx;
+  final right = dx + diamondSize;
       final top = dy;
-      final bottom = dy + diamondSize + spacing;
+  final bottom = dy + diamondSize;
       if (left < minLeft) minLeft = left;
       if (right > maxRight) maxRight = right;
       if (top < minTop) minTop = top;
@@ -182,7 +182,9 @@ class DiamondTwoRowLattice extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-  color: debug && debugBackground != null ? debugBackground!.withAlpha((0.02 * 255).round()) : null, // ~5
+      color: debug && debugBackground != null
+          ? debugBackground!.withAlpha((0.02 * 255).round())
+          : null, // ~5
       child: Stack(children: stackChildren),
     );
   }
@@ -256,17 +258,14 @@ class _BuildDroppableTile extends StatelessWidget {
           : isHover
             ? baseFillColor.withAlpha((0.6 * 255).round()) // ~153
             : baseFillColor);
-          final tile = Padding(
-            padding: EdgeInsets.all(spacing / 2),
-            child: DiamondTile(
-              size: diamondSize,
-              borderColor: borderColor,
-              borderWidth: borderWidth,
-              cornerRadius: cornerRadius,
-              fillColor: fill,
-              onTap: onTapIndex == null ? null : () => onTapIndex!(index),
-              child: child,
-            ),
+          final tile = DiamondTile(
+            size: diamondSize,
+            borderColor: borderColor,
+            borderWidth: borderWidth,
+            cornerRadius: cornerRadius,
+            fillColor: fill,
+            onTap: onTapIndex == null ? null : () => onTapIndex!(index),
+            child: child,
           );
           if (!showSelectionIcon) return tile;
           // Overlay a circular check icon at the top center of the diamond area.

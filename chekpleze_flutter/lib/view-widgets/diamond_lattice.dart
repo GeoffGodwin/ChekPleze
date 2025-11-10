@@ -50,34 +50,35 @@ class DiamondLattice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox();
-  final List<Widget> children = [];
+    final List<Widget> children = [];
     final rows = (count / columns).ceil();
 
-    // Vertical spacing: for a diamond (rotated square), the effective vertical distance
-    // between centers for tight packing is diamondSize / 2. sqrt(2)/2 of square size.
-    final verticalStep = tight ? (diamondSize * 0.5) : (diamondSize + spacing);
-    final horizontalOffset = diamondSize / 2; // Offset for staggered rows.
+    // Spacing model: treat [spacing] as a margin between tiles on all sides.
+    // Horizontal: centers separated by (diamondSize + spacing).
+    // Vertical: for tight packing baseline is diamondSize/2 (tips touch);
+    // we add spacing so tips are separated by spacing distance. Otherwise baseline diamondSize.
+    final baselineVertical = tight ? (diamondSize * 0.5) : diamondSize;
+    final verticalStep = baselineVertical + spacing;
+    final horizontalStep = diamondSize + spacing;
+    final horizontalOffset = horizontalStep / 2; // stagger offset for odd rows.
 
     int globalIndex = 0;
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < columns && globalIndex < count; c++) {
-        final currentIndex = globalIndex; // capture for closure
+        final currentIndex = globalIndex;
         final isOddRow = r.isOdd;
         final dx = isOddRow ? horizontalOffset : 0.0;
         children.add(
           Transform.translate(
-            offset: Offset(dx + c * diamondSize, r * verticalStep),
-            child: Padding(
-              padding: EdgeInsets.all(spacing / 2),
-              child: DiamondTile(
-                size: diamondSize,
-                borderColor: borderColor,
-                borderWidth: borderWidth,
-                fillColor: fillColor,
-                cornerRadius: cornerRadius,
-                onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
-                child: _buildChild(context, currentIndex),
-              ),
+            offset: Offset(dx + c * horizontalStep, r * verticalStep),
+            child: DiamondTile(
+              size: diamondSize,
+              borderColor: borderColor,
+              borderWidth: borderWidth,
+              fillColor: fillColor,
+              cornerRadius: cornerRadius,
+              onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
+              child: _buildChild(context, currentIndex),
             ),
           ),
         );
@@ -85,9 +86,8 @@ class DiamondLattice extends StatelessWidget {
       }
     }
 
-    // We use a sized box to constrain width. Total width accounts for columns and possible offset.
-    final totalWidth = columns * diamondSize + horizontalOffset + spacing;
-    final totalHeight = rows * verticalStep + diamondSize; // approximate.
+    final totalWidth = columns * horizontalStep + horizontalOffset;
+    final totalHeight = rows * verticalStep + diamondSize; // approximate bounding box.
 
     return SizedBox(
       width: totalWidth,
