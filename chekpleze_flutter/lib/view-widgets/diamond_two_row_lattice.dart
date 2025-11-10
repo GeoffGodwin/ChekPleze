@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'diamond_widget.dart';
+import 'diamond_widget.dart'; // still needed for DiamondTile
 
 /// Two-row alternating diamond layout.
 ///
@@ -30,6 +30,11 @@ class DiamondTwoRowLattice extends StatelessWidget {
     this.debugOuterBorderColor = const Color(0xFF00C853),
     this.debugTileBorderColor = const Color(0xFF2962FF),
     this.debugBackground,
+    this.dropEnabled = false,
+    this.onItemDropped,
+    this.buildHighlightFill,
+    this.selectionMode = false,
+    this.selectedIndices = const {},
   });
 
   final int count;
@@ -47,6 +52,14 @@ class DiamondTwoRowLattice extends StatelessWidget {
   final Color debugOuterBorderColor;
   final Color debugTileBorderColor;
   final Color? debugBackground;
+  // Drag & drop
+  final bool dropEnabled;
+  final void Function(int index, Object data)? onItemDropped;
+  // Optional dynamic fill override when highlighting (drag over or selected)
+  final Color Function(int index, bool isSelected, bool isDragHover)? buildHighlightFill;
+  // Selection mode state passed from parent
+  final bool selectionMode;
+  final Set<int> selectedIndices;
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +116,8 @@ class DiamondTwoRowLattice extends StatelessWidget {
       if (debug && debugTileBounds) {
         underlays.add(
           Transform.translate(
-            offset: Offset(dx - minLeft, dy - minTop),
+            // dx/dy already normalized by subtracting minLeft/minTop.
+            offset: Offset(dx, dy),
             child: Container(
               width: diamondSize + spacing,
               height: diamondSize + spacing,
@@ -116,20 +130,25 @@ class DiamondTwoRowLattice extends StatelessWidget {
         );
       }
 
+      final isSelected = selectedIndices.contains(i);
       widgets.add(
-        Transform.translate(
-          offset: Offset(dx, dy),
-          child: Padding(
-            padding: EdgeInsets.all(spacing / 2),
-            child: DiamondTile(
-              size: diamondSize,
-              borderColor: borderColor,
-              borderWidth: borderWidth,
-              fillColor: fillColor,
-              onTap: onTapIndex == null ? null : () => onTapIndex!(i),
-              child: _buildChild(context, i),
-            ),
-          ),
+        _BuildDroppableTile(
+          key: ValueKey('diamond-$i'),
+          dx: dx,
+          dy: dy,
+          spacing: spacing,
+          index: i,
+          diamondSize: diamondSize,
+          borderColor: borderColor,
+          borderWidth: borderWidth,
+          baseFillColor: fillColor,
+          isSelected: isSelected,
+          selectionMode: selectionMode,
+          dropEnabled: dropEnabled,
+          buildHighlightFill: buildHighlightFill,
+          onTapIndex: onTapIndex,
+          onItemDropped: onItemDropped,
+          child: _buildChild(context, i),
         ),
       );
     }
@@ -165,6 +184,78 @@ class DiamondTwoRowLattice extends StatelessWidget {
       '$index',
       style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
       textAlign: TextAlign.center,
+    );
+  }
+}
+
+class _BuildDroppableTile extends StatelessWidget {
+  const _BuildDroppableTile({
+    super.key,
+    required this.dx,
+    required this.dy,
+    required this.spacing,
+    required this.index,
+    required this.diamondSize,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.baseFillColor,
+    required this.isSelected,
+    required this.selectionMode,
+    required this.dropEnabled,
+    required this.buildHighlightFill,
+    required this.onTapIndex,
+    required this.onItemDropped,
+    required this.child,
+  });
+
+  final double dx;
+  final double dy;
+  final double spacing;
+  final int index;
+  final double diamondSize;
+  final Color borderColor;
+  final double borderWidth;
+  final Color baseFillColor;
+  final bool isSelected;
+  final bool selectionMode;
+  final bool dropEnabled;
+  final Color Function(int index, bool isSelected, bool isDragHover)? buildHighlightFill;
+  final ValueChanged<int>? onTapIndex;
+  final void Function(int index, Object data)? onItemDropped;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // Build the interactive tile using candidate list length for hover state.
+    return Transform.translate(
+      offset: Offset(dx, dy),
+      child: DragTarget<Object>(
+        onWillAcceptWithDetails: (details) => dropEnabled,
+        onAcceptWithDetails: (details) {
+          if (!dropEnabled) return;
+          onItemDropped?.call(index, details.data);
+        },
+        builder: (context, candidate, rejected) {
+          final isHover = dropEnabled && candidate.isNotEmpty;
+          final fill = buildHighlightFill?.call(index, isSelected, isHover) ??
+              (isSelected
+                  ? Colors.amberAccent.withOpacity(0.7)
+                  : isHover
+                      ? baseFillColor.withOpacity(0.6)
+                      : baseFillColor);
+          return Padding(
+            padding: EdgeInsets.all(spacing / 2),
+            child: DiamondTile(
+              size: diamondSize,
+              borderColor: borderColor,
+              borderWidth: borderWidth,
+              fillColor: fill,
+              onTap: onTapIndex == null ? null : () => onTapIndex!(index),
+              child: child,
+            ),
+          );
+        },
+      ),
     );
   }
 }

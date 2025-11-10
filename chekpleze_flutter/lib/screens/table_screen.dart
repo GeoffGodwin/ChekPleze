@@ -18,6 +18,9 @@ class TableScreen extends StatelessWidget {
         child: StoreConnector<AppState, List<String>>(
           converter: (store) => store.state.getGuests,
           builder: (context, guests) {
+            final store = StoreProvider.of<AppState>(context);
+            final state = store.state;
+            final isReady = state.isDraftValid;
             final lattice = DiamondTwoRowLattice(
               count: guests.length,
               diamondSize: 140,
@@ -25,12 +28,27 @@ class TableScreen extends StatelessWidget {
               borderColor: Colors.red,
               borderWidth: 2,
               fillColor: Colors.white,
-              itemBuilder: (context, i) => Text(
-                guests[i],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              onTapIndex: (i) => debugPrint('Tapped ${guests[i]}'),
+              itemBuilder: (context, i) => _SeatLabel(name: guests[i]),
+              onTapIndex: state.assigning
+                  ? (i) => store.dispatch(ToggleAssignSeatAction(i))
+                  : (i) => debugPrint('Tapped ${guests[i]}'),
+              dropEnabled: isReady,
+              onItemDropped: (i, data) {
+                if (data is _DraftPayload) {
+                  store.dispatch(DirectAssignItemToSeatAction(
+                    name: data.name,
+                    price: data.price,
+                    seatIndex: i,
+                  ));
+                }
+              },
+              selectionMode: state.assigning,
+              selectedIndices: state.draftSelectedSeats,
+              buildHighlightFill: (i, isSelected, isHover) {
+                if (isSelected) return Colors.greenAccent.withOpacity(0.6);
+                if (isHover) return Colors.amber.withOpacity(0.5);
+                return Colors.white;
+              },
               debug: true,
               debugTileBounds: true,
               debugOuterBorderColor: Colors.greenAccent,
@@ -41,9 +59,83 @@ class TableScreen extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: Text('Seats', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 240,
+                            child: TextField(
+                              onChanged: (v) => store.dispatch(DraftSetNameAction(v)),
+                              decoration: const InputDecoration(
+                                labelText: 'Item',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 120,
+                            child: TextField(
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => store.dispatch(DraftSetPriceAction(v)),
+                              decoration: const InputDecoration(
+                                labelText: 'Price',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton(
+                            onPressed: isReady
+                                ? () {
+                                    if (state.assigning) {
+                                      store.dispatch(ConfirmAssignItemAction());
+                                    } else {
+                                      store.dispatch(EnterAssignModeAction());
+                                    }
+                                  }
+                                : null,
+                            child: Text(state.assigning ? 'Confirm' : 'Assign'),
+                          ),
+                          const SizedBox(width: 12),
+                          Opacity(
+                            opacity: isReady ? 1.0 : 0.4,
+                            child: IgnorePointer(
+                              ignoring: !isReady,
+                              child: Draggable<_DraftPayload>(
+                                data: _DraftPayload(
+                                  name: state.draftName,
+                                  price: double.tryParse(state.draftPrice) ?? 0.0,
+                                ),
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: Chip(label: Text('${state.draftName} - ${state.draftPrice}')),
+                                ),
+                                childWhenDragging: const Icon(Icons.drag_indicator, color: Colors.grey),
+                                child: const Icon(Icons.drag_indicator),
+                              ),
+                            ),
+                          ),
+                          if (state.assigning) ...[
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () => store.dispatch(CancelAssignModeAction()),
+                              child: const Text('Cancel'),
+                            )
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 // Expanded area: full width; lattice centered horizontally, scrolls horizontally if overflow.
                 Expanded(
@@ -66,6 +158,30 @@ class TableScreen extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+// Payload carried during drag operations for a draft item.
+class _DraftPayload {
+  final String name;
+  final double price;
+  const _DraftPayload({required this.name, required this.price});
+}
+
+// Seat label widget (allows styling & future status icons)
+class _SeatLabel extends StatelessWidget {
+  final String name;
+  const _SeatLabel({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      name,
+      style: const TextStyle(fontWeight: FontWeight.bold),
+      textAlign: TextAlign.center,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
     );
   }
 }
