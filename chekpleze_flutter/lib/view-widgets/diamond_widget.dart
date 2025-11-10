@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 /// A custom diamond (rotated square) border that supports rounded tips
 /// via [cornerRadius]. The radius is clamped so arcs never overlap.
@@ -152,8 +153,8 @@ class DiamondTile extends StatelessWidget {
           customBorder: DiamondBorder(cornerRadius: cornerRadius),
           // Only override overlayColor when we actively want to suppress hover.
           overlayColor: suppressHover
-              ? MaterialStateProperty.resolveWith<Color?>((states) {
-                  if (states.contains(MaterialState.hovered)) {
+              ? WidgetStateProperty.resolveWith<Color?>((states) {
+                  if (states.contains(WidgetState.hovered)) {
                     // Return fully transparent to disable grey hover highlight.
                     return Colors.transparent;
                   }
@@ -212,5 +213,67 @@ class DiamondTile extends StatelessWidget {
       fit: BoxFit.scaleDown,
       child: child,
     );
+  }
+}
+
+/// A proxy widget that restricts hit testing to a given [ShapeBorder].
+///
+/// Useful for custom-shaped interactive areas (e.g., diamond-shaped drag targets)
+/// so pointer/drag hit tests don't use the full rectangular bounds.
+class ShapeHitTester extends SingleChildRenderObjectWidget {
+  const ShapeHitTester({super.key, required this.shape, super.child});
+
+  final ShapeBorder shape;
+
+  @override
+  RenderShapeHitTester createRenderObject(BuildContext context) {
+    return RenderShapeHitTester(shape: shape, textDirection: Directionality.maybeOf(context));
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, covariant RenderShapeHitTester renderObject) {
+    renderObject
+      ..shape = shape
+      ..textDirection = Directionality.maybeOf(context);
+  }
+}
+
+class RenderShapeHitTester extends RenderProxyBox {
+  RenderShapeHitTester({required ShapeBorder shape, TextDirection? textDirection})
+      : _shape = shape,
+        _textDirection = textDirection;
+
+  ShapeBorder _shape;
+  TextDirection? _textDirection;
+
+  set shape(ShapeBorder value) {
+    if (_shape == value) return;
+    _shape = value;
+    markNeedsLayout();
+  }
+
+  set textDirection(TextDirection? value) {
+    if (_textDirection == value) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  Path _outerPath() {
+    final rect = Offset.zero & size;
+    if (_shape is OutlinedBorder) {
+      return (_shape as OutlinedBorder).getOuterPath(rect, textDirection: _textDirection);
+    }
+    return Path()..addRect(rect);
+  }
+
+  bool _contains(Offset position) {
+    final path = _outerPath();
+    return path.contains(position);
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_contains(position)) return false;
+    return super.hitTest(result, position: position);
   }
 }

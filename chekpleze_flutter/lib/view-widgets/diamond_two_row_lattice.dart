@@ -250,7 +250,12 @@ class _BuildDroppableTile extends StatelessWidget {
     // Build the interactive tile using candidate list length for hover state.
     return Transform.translate(
       offset: Offset(dx, dy),
-      child: DragTarget<Object>(
+      // Wrap the entire DragTarget with ShapeHitTester so hit testing for the
+      // drag target itself is constrained to the diamond path (instead of the
+      // full square bounding box).
+      child: ShapeHitTester(
+        shape: DiamondBorder(cornerRadius: cornerRadius),
+        child: DragTarget<Object>(
         onWillAcceptWithDetails: (details) => dropEnabled,
         onAcceptWithDetails: (details) {
           if (!dropEnabled) return;
@@ -302,6 +307,7 @@ class _BuildDroppableTile extends StatelessWidget {
             ],
           );
         },
+        ),
       ),
     );
   }

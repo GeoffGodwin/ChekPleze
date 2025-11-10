@@ -71,14 +71,17 @@ class DiamondLattice extends StatelessWidget {
         children.add(
           Transform.translate(
             offset: Offset(dx + c * horizontalStep, r * verticalStep),
-            child: DiamondTile(
-              size: diamondSize,
-              borderColor: borderColor,
-              borderWidth: borderWidth,
-              fillColor: fillColor,
-              cornerRadius: cornerRadius,
-              onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
-              child: _buildChild(context, currentIndex),
+            child: ShapeHitTester(
+              shape: DiamondBorder(cornerRadius: cornerRadius),
+              child: DiamondTile(
+                size: diamondSize,
+                borderColor: borderColor,
+                borderWidth: borderWidth,
+                fillColor: fillColor,
+                cornerRadius: cornerRadius,
+                onTap: onTapIndex == null ? null : () => onTapIndex!(currentIndex),
+                child: _buildChild(context, currentIndex),
+              ),
             ),
           ),
         );

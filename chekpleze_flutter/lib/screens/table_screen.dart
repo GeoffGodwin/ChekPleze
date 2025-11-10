@@ -171,12 +171,19 @@ class _TableScreenState extends State<TableScreen> {
                                           name: state.draftName,
                                           price: double.tryParse(state.draftPrice) ?? 0.0,
                                         ),
+                                        // Center feedback under the pointer using pointer anchor + fractional shift.
+                                        dragAnchorStrategy: pointerDragAnchorStrategy,
                                         onDragStarted: () => setState(() => _isDraggingDraft = true),
                                         onDragEnd: (_) => setState(() => _isDraggingDraft = false),
                                         onDraggableCanceled: (_, __) => setState(() => _isDraggingDraft = false),
                                         feedback: Material(
                                           color: Colors.transparent,
-                                          child: Chip(label: Text('${state.draftName} - ${state.draftPrice}')),
+                                          child: FractionalTranslation(
+                                            translation: const Offset(-0.5, -0.5),
+                                            child: Chip(
+                                              label: Text('${state.draftName} - ${state.draftPrice}'),
+                                            ),
+                                          ),
                                         ),
                                         childWhenDragging: const Icon(Icons.drag_indicator, color: Colors.grey),
                                         child: const Icon(Icons.drag_indicator),
