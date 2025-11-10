@@ -75,12 +75,18 @@ class _TableScreenState extends State<TableScreen> {
               selectionMode: state.assigning,
               selectedIndices: state.draftSelectedSeats,
               buildHighlightFill: (i, isSelected, isHover) {
-                // Replaced deprecated withOpacity with withAlpha for precision & to silence analyzer infos.
-                if (isSelected) return Colors.greenAccent.withAlpha((0.6 * 255).round()); // ~153
-                if (isHover) return Colors.amber.withAlpha((0.5 * 255).round()); // 128
+                // Assign mode: only show selection color (no hover shading).
+                if (state.assigning) {
+                  return isSelected
+                      ? Colors.greenAccent.withAlpha((0.6 * 255).round())
+                      : Colors.white;
+                }
+                // Drag/drop mode: yellow hover feedback.
+                if (isHover) return Colors.amber.withAlpha((0.5 * 255).round());
                 return Colors.white;
               },
-              debug: true,
+              showSelectionIcons: state.assigning,
+              debug: false,
               debugTileBounds: true,
               debugOuterBorderColor: Colors.greenAccent,
               debugTileBorderColor: Colors.blueAccent,
@@ -108,7 +114,8 @@ class _TableScreenState extends State<TableScreen> {
                               decoration: const InputDecoration(
                                 labelText: 'Item',
                                 border: OutlineInputBorder(),
-                                isDense: true,
+                                // Provide standard padding to avoid floating label clipping.
+                                contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                               ),
                             ),
                           ),
@@ -122,7 +129,7 @@ class _TableScreenState extends State<TableScreen> {
                               decoration: const InputDecoration(
                                 labelText: 'Price',
                                 border: OutlineInputBorder(),
-                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                               ),
                             ),
                           ),
@@ -135,6 +142,10 @@ class _TableScreenState extends State<TableScreen> {
                                 : (isReady
                                     ? () => store.dispatch(EnterAssignModeAction())
                                     : null),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: state.assigning ? const Color(0xFF00E676) : null, // mint green
+                              foregroundColor: state.assigning ? Colors.white : null,
+                            ),
                             child: Text(state.assigning ? 'Confirm' : 'Assign'),
                           ),
                           const SizedBox(width: 12),
@@ -146,7 +157,7 @@ class _TableScreenState extends State<TableScreen> {
                                 ? IconButton(
                                     tooltip: 'Cancel assign',
                                     onPressed: () => store.dispatch(CancelAssignModeAction()),
-                                    icon: const Icon(Icons.close),
+                                    icon: const Icon(Icons.close, color: Colors.red),
                                   )
                                 : Opacity(
                                     opacity: isReady ? 1.0 : 0.4,

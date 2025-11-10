@@ -35,6 +35,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
     this.buildHighlightFill,
     this.selectionMode = false,
     this.selectedIndices = const {},
+    this.showSelectionIcons = false,
   });
 
   final int count;
@@ -60,6 +61,8 @@ class DiamondTwoRowLattice extends StatelessWidget {
   // Selection mode state passed from parent
   final bool selectionMode;
   final Set<int> selectedIndices;
+  // Whether to show circular selection check icons (typically in assign/selection mode).
+  final bool showSelectionIcons;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +152,7 @@ class DiamondTwoRowLattice extends StatelessWidget {
           buildHighlightFill: buildHighlightFill,
           onTapIndex: onTapIndex,
           onItemDropped: onItemDropped,
+          showSelectionIcon: showSelectionIcons && selectionMode,
           child: _buildChild(context, i),
         ),
       );
@@ -207,6 +211,7 @@ class _BuildDroppableTile extends StatelessWidget {
     required this.onTapIndex,
     required this.onItemDropped,
     required this.child,
+    this.showSelectionIcon = false,
   });
 
   final double dx;
@@ -224,6 +229,7 @@ class _BuildDroppableTile extends StatelessWidget {
   final ValueChanged<int>? onTapIndex;
   final void Function(int index, Object data)? onItemDropped;
   final Widget child;
+  final bool showSelectionIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +250,7 @@ class _BuildDroppableTile extends StatelessWidget {
           : isHover
             ? baseFillColor.withAlpha((0.6 * 255).round()) // ~153
             : baseFillColor);
-          return Padding(
+          final tile = Padding(
             padding: EdgeInsets.all(spacing / 2),
             child: DiamondTile(
               size: diamondSize,
@@ -254,6 +260,33 @@ class _BuildDroppableTile extends StatelessWidget {
               onTap: onTapIndex == null ? null : () => onTapIndex!(index),
               child: child,
             ),
+          );
+          if (!showSelectionIcon) return tile;
+          // Overlay a circular check icon at the top center of the diamond area.
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              tile,
+              Positioned(
+                // Place inside the diamond with slight padding from the top.
+                top: 6,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      // Brighter mint green when selected, neutral grey otherwise.
+                      color: isSelected ? const Color(0xFF00E676) : Colors.grey.shade400,
+                      shape: BoxShape.circle,
+                      boxShadow: const [BoxShadow(blurRadius: 2, color: Colors.black26)],
+                    ),
+                    child: const Icon(Icons.check, size: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
