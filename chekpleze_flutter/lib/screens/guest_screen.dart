@@ -16,6 +16,7 @@ class _GuestScreenState extends State<GuestScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
+      appBar: AppBar(),
       body: SafeArea(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -24,15 +25,7 @@ class _GuestScreenState extends State<GuestScreen> {
               const GuestList()
             ],
           )
-      ),
-      floatingActionButton: defaultTargetPlatform == TargetPlatform.iOS ?
-        BackButton(
-          style: ButtonStyle(
-            padding: WidgetStateProperty.all<EdgeInsets>(const EdgeInsets.fromLTRB(0, 30, 20, 0)),
-            iconSize: WidgetStateProperty.all(30.0)
-          )
-        ) : Container(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
+      )
     );
   }
 }
@@ -67,7 +60,7 @@ class GuestList extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black)
                 ),
-                height: 250,
+                height: 200,
                 child: ListView(
                   children: [
                     ...state.getGuests
