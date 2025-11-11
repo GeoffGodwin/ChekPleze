@@ -7,6 +7,7 @@ import 'package:chekpleze_flutter/app_state.dart';
 import 'package:chekpleze_flutter/screens/guest_screen.dart';
 import 'package:chekpleze_flutter/screens/welcome_screen.dart';
 import 'package:chekpleze_flutter/screens/bill_details_screen.dart';
+import 'package:chekpleze_flutter/screens/table_screen.dart';
 
 void main() {
   runApp(ChekPleze());
@@ -37,7 +38,8 @@ class ChekPleze extends StatelessWidget {
         routes: {
         '/': (context) => const WelcomeScreen(),
         '/guest-screen': (context) => const GuestScreen(),
-        '/bill-details-screen': (context) => const BillDetailsScreen()
+        '/bill-details-screen': (context) => const BillDetailsScreen(),
+        '/table-screen': (context) => const TableScreen(),
       }
       ),
     );
