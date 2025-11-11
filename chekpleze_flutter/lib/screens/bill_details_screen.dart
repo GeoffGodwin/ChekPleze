@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../utils/custom_slider_thumb_circle.dart';
-import '../app_state.dart';
+import 'package:chekpleze_flutter/view-widgets/custom_slider_thumb_circle.dart';
+import 'package:chekpleze_flutter/app_state.dart';
 
 class BillDetailsScreen extends StatefulWidget {
   const BillDetailsScreen({super.key});
