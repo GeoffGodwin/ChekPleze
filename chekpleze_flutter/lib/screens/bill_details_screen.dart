@@ -244,13 +244,6 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
               ),
             ),
           ),
-          floatingActionButton: defaultTargetPlatform == TargetPlatform.iOS
-              ? BackButton(
-                  style: ButtonStyle(
-                      padding: WidgetStateProperty.all<EdgeInsets>(const EdgeInsets.fromLTRB(0, 30, 20, 0)),
-                      iconSize: WidgetStateProperty.all(30.0)))
-              : null,
-          floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
         );
       },
     );
