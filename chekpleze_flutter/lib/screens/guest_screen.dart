@@ -111,7 +111,7 @@ class AddGuest extends StatelessWidget {
     super.key,
   });
 
-
+  final guestMax = 12;
   final guestName = TextEditingController();
 
   void dispose() {
@@ -121,45 +121,62 @@ class AddGuest extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = StoreProvider.of<AppState>(context);
-
     return Expanded(
       flex: 2,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 10,
-        children: <Widget>[
-          SizedBox(
-            width: 250.0,
-            child: TextField(
-              controller: guestName,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                fillColor: Colors.white,
-                hintText: 'Add Guest Name',
+      child: StoreConnector<AppState, List<String>>(
+        converter: (store) => store.state.getGuests,
+        builder: (context, guests) {
+          final store = StoreProvider.of<AppState>(context);
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 10,
+            children: <Widget>[
+              SizedBox(
+                width: 200.0,
+                child: TextField(
+                  controller: guestName,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    fillColor: Colors.white,
+                    hintText: 'Add Guest Name',
+                  ),
+                ),
               ),
-            ),
-          ),
-          SizedBox(
-            width: 150.0,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
-              child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: guestName,
-                builder: (context, value, child) {
-                  return ElevatedButton(
-                    onPressed: guestName.text.isEmpty ? null : () {
-                      store.dispatch(AddGuestAction(guestName.text));
-                      guestName.clear();
+              SizedBox(
+                width: 150.0,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: guestName,
+                    builder: (context, value, child) {
+                      return ElevatedButton(
+                        onPressed: guestName.text.isEmpty || guests.length >= guestMax ? null : () {
+                          store.dispatch(AddGuestAction(guestName.text));
+                          guestName.clear();
+                        },
+                        child: const Text('Add Guest'),
+                      );
+                    }
+                  )
+                )
+              ),
+              SizedBox(
+                width: 150.0,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
+                  child: ElevatedButton(
+                    onPressed: guests.length >= guestMax ? null : () {
+                      store.dispatch(AddGuestAction('Guest ${guests.length + 1}'));
                     },
-                    child: const Text('Add Guest'),
-                  );
-                }
+                    child: const Text('Quick Add'),
+                  )
+                ),
               )
-            )
-          ),
-        ],
+            ],
+          );
+        }
       ),
     );
   }
