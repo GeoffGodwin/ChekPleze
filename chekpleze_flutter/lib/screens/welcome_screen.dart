@@ -15,6 +15,10 @@ class WelcomeScreen extends StatelessWidget {
       Navigator.of(context).pushNamed('/guest-screen');
     }
 
+    void showSeatTotalScreen() {
+      Navigator.of(context).pushNamed('/seat-total-screen');
+    }
+
     return Scaffold(
       backgroundColor: Colors.deepPurpleAccent,
       body: Center(
@@ -40,6 +44,11 @@ class WelcomeScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {},
                   child: const Text('Load Table'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: showSeatTotalScreen,
+                  child: const Text('Seat Total Screen'),
                 ),
               ],
             )
