@@ -98,18 +98,26 @@ class GuestList extends StatelessWidget {
   }
 }
 
-class AddGuest extends StatelessWidget {
+class AddGuest extends StatefulWidget {
 
-  AddGuest({
+  const AddGuest({
     super.key,
   });
 
+  @override
+  State<AddGuest> createState() => _AddGuest();
+}
+
+class _AddGuest extends State<AddGuest> {
   final guestMax = 12;
   final guestName = TextEditingController();
+  String name = ''; 
 
+  @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
     guestName.dispose();
+    super.dispose();
   }
 
   @override
@@ -135,23 +143,19 @@ class AddGuest extends StatelessWidget {
                     fillColor: Colors.white,
                     hintText: 'Add Guest Name',
                   ),
+                  onChanged: (v) => setState(() => name = v),
                 ),
               ),
               SizedBox(
                 width: 150.0,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: guestName,
-                    builder: (context, value, child) {
-                      return ElevatedButton(
-                        onPressed: guestName.text.isEmpty || guests.length >= guestMax ? null : () {
-                          store.dispatch(AddGuestAction(guestName.text));
-                          guestName.clear();
-                        },
-                        child: const Text('Add Guest'),
-                      );
-                    }
+                  child: ElevatedButton(
+                    onPressed: name.isEmpty || guests.length >= guestMax ? null : () {
+                      store.dispatch(AddGuestAction(guestName.text));
+                      guestName.clear();
+                    },
+                    child: const Text('Add Guest'),
                   )
                 )
               ),
