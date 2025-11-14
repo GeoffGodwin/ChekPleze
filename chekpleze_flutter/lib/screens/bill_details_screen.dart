@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../utils/custom_slider_thumb_circle.dart';
-import '../app_state.dart';
+import 'package:chekpleze_flutter/view-widgets/custom_slider_thumb_circle.dart';
+import 'package:chekpleze_flutter/app_state.dart';
 
 class BillDetailsScreen extends StatefulWidget {
   const BillDetailsScreen({super.key});
@@ -244,13 +244,6 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
               ),
             ),
           ),
-          floatingActionButton: defaultTargetPlatform == TargetPlatform.iOS
-              ? BackButton(
-                  style: ButtonStyle(
-                      padding: WidgetStateProperty.all<EdgeInsets>(const EdgeInsets.fromLTRB(0, 30, 20, 0)),
-                      iconSize: WidgetStateProperty.all(30.0)))
-              : null,
-          floatingActionButtonLocation: FloatingActionButtonLocation.miniStartTop,
         );
       },
     );
